@@ -181,8 +181,8 @@ def generuj_wniosek(data: WniosekRequest):
         "status": "ok",
 
         "pdf_P_url":
-            f"http://127.0.0.1:8002/generated/FormularzP_{uid}.pdf",
+            f"https://api-abn7.onrender.com/generated/FormularzP_{uid}.pdf",
 
         "pdf_P1_url":
-            f"http://127.0.0.1:8002/generated/FormularzP1_{uid}.pdf"
+            f"https://api-abn7.onrender.com/generated/FormularzP1_{uid}.pdf"
     }
