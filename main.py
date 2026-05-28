@@ -30,8 +30,23 @@ def checkbox_yes(pola, nazwa):
 
 
 def checkbox_no(pola, nazwa):
-    # Niektóre pola skali w tym formularzu mają wartość eksportu /No
     pola[nazwa] = "/No"
+
+
+def czy_warunki_zabudowy(fp: Dict[str, Any], fp1: Dict[str, Any]) -> bool:
+    tekst = " ".join([
+        str(fp.get("cel", "")),
+        str(fp.get("uwagi", "")),
+        str(fp1.get("uwagi_P1", "")),
+        str(fp1.get("rodzaj_mapy", "")),
+    ]).lower()
+
+    return (
+        "warunki zabudowy" in tekst
+        or "warunków zabudowy" in tekst
+        or "wz" == tekst.strip()
+        or "decyzja o warunkach zabudowy" in tekst
+    )
 
 
 def wypelnij_pdf(szablon_pdf, plik_wynikowy, pola):
@@ -89,25 +104,24 @@ def generuj_wniosek(data: WniosekRequest):
     fp = data.formularz_P
     fp1 = data.formularz_P1
 
-    # ----------------------------
-    # FORMULARZ P
-    # ----------------------------
+    wz = czy_warunki_zabudowy(fp, fp1)
 
     sposob_odbioru = fp.get("sposob_odbioru", "")
     cl = fp.get("cl", "")
+
+    # ----------------------------
+    # FORMULARZ P
+    # ----------------------------
 
     pola_p = {
         "wnioskodawca_imie_nazwisko_lub_nazwa": fp.get("wnioskodawca", ""),
         "wnioskodawca_adres": fp.get("adres", ""),
         "wnioskodawca_telefon_email": fp.get("telefon_email", ""),
         "uwagi": fp.get("uwagi", ""),
-
         "adres_wysylki_pocztowej": fp.get("adres_wysylki", ""),
-
         "osoba_kontaktowa_imie_nazwisko": fp.get("osoba_kontaktowa", ""),
         "osoba_kontaktowa_email": fp.get("email_kontaktowy", ""),
         "osoba_kontaktowa_telefon": fp.get("telefon_kontaktowy", ""),
-
         "material_mapa_zasadnicza_lub_ewidencyjna": "/YES",
     }
 
@@ -130,55 +144,61 @@ def generuj_wniosek(data: WniosekRequest):
     # FORMULARZ P1
     # ----------------------------
 
-    rodzaj_mapy = fp1.get("rodzaj_mapy", "")
-    postac = fp1.get("postac", "")
-    skala = fp1.get("skala", "")
-    kolorystyka = fp1.get("kolorystyka", "")
-    format_wydruku = fp1.get("format", "")
-
     pola_p1 = {
         "jednostka_ewidencyjna_obreb": fp1.get("obreb", ""),
         "identyfikator_dzialki_numer_dzialki": fp1.get("numer_dzialki", ""),
-        "liczba_egzemplarzy": str(fp1.get("liczba_egzemplarzy", "")),
-        "uwagi_P1": fp1.get("uwagi_P1", ""),
+        "liczba_egzemplarzy": "1" if wz else str(fp1.get("liczba_egzemplarzy", "")),
+        "uwagi_P1": "mapy do warunków zabudowy" if wz else fp1.get("uwagi_P1", ""),
+        "obszar_zalacznik_jednostka_podzialu_terytorialnego_lub_EGiB": "/YES",
     }
 
-    if rodzaj_mapy == "mapa zasadnicza":
+    if wz:
         checkbox_yes(pola_p1, "mapa_zasadnicza")
-    elif rodzaj_mapy == "mapa ewidencyjna":
         checkbox_yes(pola_p1, "mapa_ewidencji_gruntow_i_budynkow")
 
-    if postac == "wektorowa":
-        checkbox_yes(pola_p1, "postac_wektorowa")
-    elif postac == "rastrowa":
-        checkbox_yes(pola_p1, "postac_rastrowa")
-    elif postac == "drukowana":
-        checkbox_yes(pola_p1, "postac_drukowana")
+    else:
+        rodzaj_mapy = fp1.get("rodzaj_mapy", "")
+        postac = fp1.get("postac", "")
+        skala = fp1.get("skala", "")
+        kolorystyka = fp1.get("kolorystyka", "")
+        format_wydruku = fp1.get("format", "")
 
-    if skala == "1:500":
-        checkbox_no(pola_p1, "skala_1_500")
-    elif skala == "1:1000":
-        checkbox_no(pola_p1, "skala_1_1000")
-    elif skala == "1:2000":
-        checkbox_no(pola_p1, "skala_1_2000")
-    elif skala == "1:5000":
-        checkbox_no(pola_p1, "skala_1_5000")
+        if rodzaj_mapy == "mapa zasadnicza":
+            checkbox_yes(pola_p1, "mapa_zasadnicza")
+        elif rodzaj_mapy == "mapa ewidencyjna":
+            checkbox_yes(pola_p1, "mapa_ewidencji_gruntow_i_budynkow")
 
-    if kolorystyka == "czarno-biała":
-        checkbox_yes(pola_p1, "kolorystyka_czarno_biala")
-    elif kolorystyka == "kolorowa":
-        checkbox_yes(pola_p1, "kolorystyka_kolorowa")
+        if postac == "wektorowa":
+            checkbox_yes(pola_p1, "postac_wektorowa")
+        elif postac == "rastrowa":
+            checkbox_yes(pola_p1, "postac_rastrowa")
+        elif postac == "drukowana":
+            checkbox_yes(pola_p1, "postac_drukowana")
 
-    if format_wydruku == "A4":
-        checkbox_yes(pola_p1, "format_A4")
-    elif format_wydruku == "A3":
-        checkbox_yes(pola_p1, "format_A3")
-    elif format_wydruku == "A2":
-        checkbox_yes(pola_p1, "format_A2")
-    elif format_wydruku == "A1":
-        checkbox_yes(pola_p1, "format_A1")
-    elif format_wydruku == "A0":
-        checkbox_yes(pola_p1, "format_A0")
+        if skala == "1:500":
+            checkbox_no(pola_p1, "skala_1_500")
+        elif skala == "1:1000":
+            checkbox_no(pola_p1, "skala_1_1000")
+        elif skala == "1:2000":
+            checkbox_no(pola_p1, "skala_1_2000")
+        elif skala == "1:5000":
+            checkbox_no(pola_p1, "skala_1_5000")
+
+        if kolorystyka == "czarno-biała":
+            checkbox_yes(pola_p1, "kolorystyka_czarno_biala")
+        elif kolorystyka == "kolorowa":
+            checkbox_yes(pola_p1, "kolorystyka_kolorowa")
+
+        if format_wydruku == "A4":
+            checkbox_yes(pola_p1, "format_A4")
+        elif format_wydruku == "A3":
+            checkbox_yes(pola_p1, "format_A3")
+        elif format_wydruku == "A2":
+            checkbox_yes(pola_p1, "format_A2")
+        elif format_wydruku == "A1":
+            checkbox_yes(pola_p1, "format_A1")
+        elif format_wydruku == "A0":
+            checkbox_yes(pola_p1, "format_A0")
 
     wypelnij_pdf("FormularzP.pdf", output_p, pola_p)
     wypelnij_pdf("FormularzP1.pdf", output_p1, pola_p1)
