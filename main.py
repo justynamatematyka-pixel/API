@@ -38,13 +38,12 @@ def czy_warunki_zabudowy(fp: Dict[str, Any], fp1: Dict[str, Any]) -> bool:
         str(fp.get("cel", "")),
         str(fp.get("uwagi", "")),
         str(fp1.get("uwagi_P1", "")),
-        str(fp1.get("rodzaj_mapy", "")),
     ]).lower()
 
     return (
         "warunki zabudowy" in tekst
         or "warunków zabudowy" in tekst
-        or "wz" == tekst.strip()
+        or tekst.strip() == "wz"
         or "decyzja o warunkach zabudowy" in tekst
     )
 
@@ -147,16 +146,20 @@ def generuj_wniosek(data: WniosekRequest):
     pola_p1 = {
         "jednostka_ewidencyjna_obreb": fp1.get("obreb", ""),
         "identyfikator_dzialki_numer_dzialki": fp1.get("numer_dzialki", ""),
-        "liczba_egzemplarzy": "1" if wz else str(fp1.get("liczba_egzemplarzy", "")),
-        "uwagi_P1": "mapy do warunków zabudowy" if wz else fp1.get("uwagi_P1", ""),
         "obszar_zalacznik_jednostka_podzialu_terytorialnego_lub_EGiB": "/YES",
     }
 
     if wz:
+        pola_p1["liczba_egzemplarzy"] = "1"
+        pola_p1["uwagi_P1"] = "mapy do warunków zabudowy"
+
         checkbox_yes(pola_p1, "mapa_zasadnicza")
         checkbox_yes(pola_p1, "mapa_ewidencji_gruntow_i_budynkow")
 
     else:
+        pola_p1["liczba_egzemplarzy"] = str(fp1.get("liczba_egzemplarzy", ""))
+        pola_p1["uwagi_P1"] = fp1.get("uwagi_P1", "")
+
         rodzaj_mapy = fp1.get("rodzaj_mapy", "")
         postac = fp1.get("postac", "")
         skala = fp1.get("skala", "")
